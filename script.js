@@ -1,4 +1,5 @@
 import vision from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
+
 const { FaceLandmarker, FilesetResolver } = vision;
 let faceLandmarker;
 let runningMode = "IMAGE";
@@ -58,7 +59,9 @@ function enableCam() {
     webcamRunning = true;
     // getUsermedia parameters.
     const constraints = {
-        video: true
+        video: {
+            frameRate: { ideal: 120 }
+        }
     };
     // Activate the webcam stream.
     navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
@@ -104,27 +107,66 @@ function detectBlinking(blendShapes) {
 }
 
 function triggerBlinkAction() {
-    // Change background to black
-    document.body.style.backgroundColor = "black";
-
-    // Choose a random message
-    const phrase = phrases[Math.floor(Math.random() * phrases.length)];
-
-    // Create a text element and add it to the screen
-    const textElement = document.createElement('div');
-    textElement.style.position = 'absolute';
-    textElement.style.top = '50%';
-    textElement.style.left = '50%';
-    textElement.style.transform = 'translate(-50%, -50%)';
-    textElement.style.color = 'white';
-    textElement.style.fontSize = '24px';
-    textElement.style.zIndex = '1000';
-    textElement.innerText = phrase;
-    document.body.appendChild(textElement);
-
-    // Set a timeout to revert the action and remove the text after 100ms
+    controlLED(true);
+    toggleBackground("black");
+    displayMessage();
     setTimeout(() => {
-        document.body.style.backgroundColor = "white"; // Revert background color
-        document.body.removeChild(textElement); // Remove the text element
+        controlLED(false);
+        toggleBackground("white");
+        clearMessage();
     }, 25);
+}
+
+function toggleBackground(color) {
+    document.body.style.backgroundColor = color;
+}
+
+function displayMessage() {
+    const phrase = getRandomPhrase();
+    const textElement = createTextElement(phrase);
+    document.body.appendChild(textElement);
+}
+
+function getRandomPhrase() {
+    return phrases[Math.floor(Math.random() * phrases.length)];
+}
+
+function createTextElement(text) {
+    const textElement = document.createElement('div');
+    textElement.className = 'message-text';
+    Object.assign(textElement.style, {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        color: 'white',
+        fontSize: '24px',
+        zIndex: '1000'
+    });
+    textElement.innerText = text;
+    return textElement;
+}
+
+function clearMessage() {
+    // Select the div with the specific class
+    const textElement = document.querySelector('.message-text');
+    if (textElement) {
+        document.body.removeChild(textElement);
+    }
+}
+
+async function controlLED(turnOn) {
+    try {
+        const response = await fetch('http://localhost:3000/control-led', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ state: turnOn }),
+        });
+        const data = await response.text();
+        console.log(data);
+    } catch (error) {
+        console.error('Error:', error);
+    }
 }
