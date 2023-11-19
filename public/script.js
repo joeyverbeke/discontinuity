@@ -108,11 +108,11 @@ function detectBlinking(blendShapes) {
 
 function triggerBlinkAction() {
     controlLED(true);
-    toggleBackground("black");
+    //toggleBackground("black");
     displayMessage();
     setTimeout(() => {
         controlLED(false);
-        toggleBackground("white");
+        //toggleBackground("white");
         clearMessage();
     }, 25);
 }
