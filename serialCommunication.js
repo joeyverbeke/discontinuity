@@ -1,19 +1,21 @@
 const { SerialPort } = require('serialport')
 
-const port = new SerialPort({
-    path: '/dev/tty.usbserial-0286023A',  
-    baudRate: 115200 
-});
+function createSerialPort(path) {
+    return new SerialPort({
+        path: path,  
+        baudRate: 115200 
+    });
+}
 
-function sendBit(bit) {
+function sendBit(port, bit) {
     const message = bit ? '1' : '0';
     port.write(message, (err) => {
       if (err) {
         console.log('Error on write: ', err.message);
       } else {
-        console.log(`Bit ${bit} sent`);
+        console.log(`${bit} > ${port}`);
       }
     });
   }
 
-  module.exports = sendBit;
+module.exports = { createSerialPort, sendBit };

@@ -165,7 +165,7 @@ async function controlLED(turnOn) {
             body: JSON.stringify({ state: turnOn }),
         });
         const data = await response.text();
-        console.log(data);
+        //console.log(data);
     } catch (error) {
         console.error('Error:', error);
     }
