@@ -1,10 +1,19 @@
 const { SerialPort } = require('serialport')
 
 function createSerialPort(path) {
-    return new SerialPort({
-        path: path,  
-        baudRate: 115200 
-    });
+    const tryCreateSerialPort = () => {
+        const port = new SerialPort({ path, baudRate: 115200 }, (err) => {
+            if (err) {
+                console.log('Error opening port: ', err.message);
+                setTimeout(tryCreateSerialPort, 3000);
+            }
+            else{
+                console.log(`Connected to ${path}`);
+            }
+        });
+        return port;
+    };
+    return tryCreateSerialPort();
 }
 
 function sendBit(port, bit) {
@@ -13,7 +22,7 @@ function sendBit(port, bit) {
       if (err) {
         console.log('Error on write: ', err.message);
       } else {
-        console.log(`${bit} > ${port}`);
+        //console.log(`${bit} > ${port.path}`);
       }
     });
   }
