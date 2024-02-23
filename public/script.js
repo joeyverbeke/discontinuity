@@ -48,7 +48,7 @@ async function createFaceLandmarker() {
 createFaceLandmarker();
 
 const video = document.getElementById("webcam"); // Get the video element from the DOM
-video.style.display = "none"; // Hide the video element
+//video.style.display = "none"; // Hide the video element
 
 // Check if webcam access is supported and start webcam.
 function enableCam() {
@@ -60,13 +60,21 @@ function enableCam() {
     // getUsermedia parameters.
     const constraints = {
         video: {
+            width: { ideal: 640 },
+            height: { ideal: 480 },
             frameRate: { ideal: 120 }
         }
     };
     // Activate the webcam stream.
     navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
         video.srcObject = stream;
-        video.addEventListener("loadeddata", predictWebcam);
+        video.addEventListener("loadeddata", () => {
+            const videoTrack = stream.getVideoTracks()[0];
+            const settings = videoTrack.getSettings();
+            console.log(`Actual resolution: ${settings.width}x${settings.height}`);
+            console.log(`Actual frame rate: ${settings.frameRate}`);
+            predictWebcam();
+        });
     });
 }
 
@@ -74,6 +82,7 @@ let lastVideoTime = -1;
 let results = undefined;
 
 async function predictWebcam() {
+    let startTime = performance.now();
     if (runningMode === "IMAGE") {
         runningMode = "VIDEO";
         await faceLandmarker.setOptions({ runningMode: runningMode });
@@ -89,8 +98,14 @@ async function predictWebcam() {
     if (webcamRunning) {
         window.requestAnimationFrame(predictWebcam);
     }
+    let endTime = performance.now();
+    let inferenceTime = Math.floor((endTime - startTime) * 10) / 10;
+    //if (inferenceTime > 1)
+    //console.log("Inference Time: " + inferenceTime + "ms");
 }
 
+/*
+//blink threshold detection
 function detectBlinking(blendShapes) {
     if (!blendShapes.length) {
         return;
@@ -105,8 +120,33 @@ function detectBlinking(blendShapes) {
         blinking = false;
     }
 }
+*/
+
+let previousBlinkScore = 0;
+let blinkThreshold = 0.3;
+let blinkAccelerationThreshold = 0.1; // Threshold for blink acceleration
+let lastActionTime = 0;
+let debouncePeriod = 50; // Time in milliseconds to wait before allowing another action
+
+function detectBlinking(blendShapes) {
+    if (!blendShapes.length) {
+        return;
+    }
+
+    let currentTime = performance.now();
+    let currentBlinkScore = Math.max(blendShapes[0].categories[9].score, blendShapes[0].categories[10].score);
+    let blinkAcceleration = currentBlinkScore - previousBlinkScore;
+
+    if (currentBlinkScore > blinkThreshold && blinkAcceleration > blinkAccelerationThreshold && (currentTime - lastActionTime > debouncePeriod)) {
+        triggerBlinkAction();
+        lastActionTime = currentTime; // Reset the timer
+    }
+
+    previousBlinkScore = currentBlinkScore;
+}
 
 function triggerBlinkAction() {
+    console.log("blinked")
     controlLED(true);
     //toggleBackground("black");
     displayMessage();
@@ -114,7 +154,7 @@ function triggerBlinkAction() {
         controlLED(false);
         //toggleBackground("white");
         clearMessage();
-    }, 25);
+    }, 2);
 }
 
 function toggleBackground(color) {

@@ -3,7 +3,7 @@ const { createSerialPort, sendBit } = require('./serialCommunication');
 const app = express();
 const port = 3000;
 
-const USE_SERIAL = false;
+const USE_SERIAL = true;
 const serial = USE_SERIAL ? createSerialPort('/dev/tty.usbserial-0286023A') : null;
 
 app.use(express.static(__dirname));

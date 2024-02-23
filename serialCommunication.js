@@ -1,10 +1,17 @@
 const { SerialPort } = require('serialport')
 
 function createSerialPort(path) {
+    let attemptCount = 0;
+    const maxAttempts = 5;
     const tryCreateSerialPort = () => {
+        if (attemptCount >= maxAttempts) {
+            console.log(`Failed to connect to ${path} after ${maxAttempts} attempts.`);
+            return null;
+        }
         const port = new SerialPort({ path, baudRate: 115200 }, (err) => {
             if (err) {
                 console.log('Error opening port: ', err.message);
+                attemptCount++;
                 setTimeout(tryCreateSerialPort, 3000);
             }
             else{
