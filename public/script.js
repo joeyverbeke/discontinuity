@@ -145,6 +145,8 @@ function detectBlinking(blendShapes) {
     previousBlinkScore = currentBlinkScore;
 }
 
+//dethrone
+
 function triggerBlinkAction() {
     console.log("blinked")
     controlLED(true);
