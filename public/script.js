@@ -1,3 +1,6 @@
+//for mirror video
+//transform: scaleX(-1);
+
 import vision from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
 
 const { FaceLandmarker, FilesetResolver } = vision;
@@ -10,6 +13,7 @@ let blinking = false;
 let totalFrames = 50; // Total number of frames you have
 let currentFrame = 1; // Start from the first frame
 let imageDirectory = "/images/";
+
 
 let phrases = 
 [
@@ -52,9 +56,11 @@ async function createFaceLandmarker() {
 createFaceLandmarker();
 
 const video = document.getElementById("webcam"); // Get the video element from the DOM
-//video.style.display = "none"; // Hide the video element
-
-const vivoVide = document.getElementById("vivoVid");
+const displayCanvas = document.getElementById('displayCanvas');
+const displayCtx = displayCanvas.getContext('2d');
+const cropCanvas = document.getElementById('cropCanvas');
+const cropCtx = cropCanvas.getContext('2d');
+const blinkImage = document.getElementById('blink-image');
 
 // Check if webcam access is supported and start webcam.
 function enableCam() {
@@ -66,8 +72,8 @@ function enableCam() {
     // getUsermedia parameters.
     const constraints = {
         video: {
-            width: { ideal: 640 },
-            height: { ideal: 480 },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
             //frameRate: { ideal: 120 }
         }
     };
@@ -96,7 +102,30 @@ async function predictWebcam() {
     let startTimeMs = performance.now();
     if (lastVideoTime !== video.currentTime) {
         lastVideoTime = video.currentTime;
-        results = await faceLandmarker.detectForVideo(video, startTimeMs);
+
+        // Calculate the crop dimensions
+        const cropWidth = video.videoHeight * 9 / 16;
+        const cropHeight = video.videoHeight;
+        const cropX = (video.videoWidth - cropWidth) / 2;
+        const cropY = 0;
+
+        // Set the canvas dimensions
+        cropCanvas.width = cropWidth;
+        cropCanvas.height = cropHeight;
+
+        // Draw the cropped video onto the crop canvas
+        cropCtx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
+        // Pass the crop canvas to MediaPipe
+        results = await faceLandmarker.detectForVideo(cropCanvas, startTimeMs);
+
+        // Draw the video or the blink image onto the display canvas
+        if (blinking) {
+            displayImage();
+            displayCtx.drawImage(blinkImage, 0, 0, displayCanvas.width, displayCanvas.height);
+        } else {
+            displayCtx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        }
     }
     if (results) {
         detectBlinking(results.faceBlendshapes);
@@ -109,24 +138,6 @@ async function predictWebcam() {
     //if (inferenceTime > 1)
     //console.log("Inference Time: " + inferenceTime + "ms");
 }
-
-/*
-//blink threshold detection
-function detectBlinking(blendShapes) {
-    if (!blendShapes.length) {
-        return;
-    }
-    let currentlyBlinking = blendShapes[0].categories[9].score > 0.5 || 
-                            blendShapes[0].categories[10].score > 0.5;
-
-    if (currentlyBlinking && !blinking) {
-        blinking = true;
-        triggerBlinkAction();
-    } else if (!currentlyBlinking && blinking) {
-        blinking = false;
-    }
-}
-*/
 
 let blinkThreshold = 0.5;
 let isBlinking = false;
@@ -148,29 +159,31 @@ function detectBlinking(blendShapes) {
 }
 
 function blinkStart() {
-    console.log("blink started at " + new Date().toLocaleString() + " " + new Date().getMilliseconds() + "ms");
-    //controlLED(true);
+    //console.log("blink started at " + new Date().toLocaleString() + " " + new Date().getMilliseconds() + "ms");
+    controlLED(true);
+    blinking = true;
+
     //displayMessage();
     //sendBlinkState(1);
-    displayImage();
+    //displayImage();
 }
 
 function blinkStop() {
-    console.log("blink stopped" + new Date().toLocaleString() + " " + new Date().getMilliseconds() + "ms");
-    //controlLED(false);
+    //console.log("blink stopped" + new Date().toLocaleString() + " " + new Date().getMilliseconds() + "ms");
+    controlLED(false);
+    blinking = false;
+
     //clearMessage();
     //sendBlinkState(0);
-    imageElement.style.display = 'none'; // Hide the image
+    blinkImage.style.display = 'none'; // Hide the image
 }
-
-let imageElement = document.getElementById('blink-image');
 
 function displayImage() {
     let imageUrl = imageDirectory + "canvas_" + String(currentFrame).padStart(5, '0') + ".png";
-    imageElement.src = imageUrl;
-    imageElement.style.display = 'block'; // Show the image
+    blinkImage.src = imageUrl;
+    blinkImage.style.display = 'block'; // Show the image
     currentFrame = (currentFrame % totalFrames) + 1; // Cycle through frames
-    console.log(currentFrame);
+    //console.log(currentFrame);
 }
 
 async function sendBlinkState(state) {
