@@ -7,6 +7,10 @@ let webcamRunning = false;
 const videoWidth = 480;
 let blinking = false;
 
+let totalFrames = 50; // Total number of frames you have
+let currentFrame = 1; // Start from the first frame
+let imageDirectory = "/images/";
+
 let phrases = 
 [
     "identity’s silent // seamless stream",
@@ -50,6 +54,8 @@ createFaceLandmarker();
 const video = document.getElementById("webcam"); // Get the video element from the DOM
 //video.style.display = "none"; // Hide the video element
 
+const vivoVide = document.getElementById("vivoVid");
+
 // Check if webcam access is supported and start webcam.
 function enableCam() {
     if (!faceLandmarker) {
@@ -62,7 +68,7 @@ function enableCam() {
         video: {
             width: { ideal: 640 },
             height: { ideal: 480 },
-            frameRate: { ideal: 120 }
+            //frameRate: { ideal: 120 }
         }
     };
     // Activate the webcam stream.
@@ -122,41 +128,64 @@ function detectBlinking(blendShapes) {
 }
 */
 
-let previousBlinkScore = 0;
-let blinkThreshold = 0.3;
-let blinkAccelerationThreshold = 0.1; // Threshold for blink acceleration
-let lastActionTime = 0;
-let debouncePeriod = 50; // Time in milliseconds to wait before allowing another action
+let blinkThreshold = 0.5;
+let isBlinking = false;
 
 function detectBlinking(blendShapes) {
     if (!blendShapes.length) {
         return;
     }
 
-    let currentTime = performance.now();
     let currentBlinkScore = Math.max(blendShapes[0].categories[9].score, blendShapes[0].categories[10].score);
-    let blinkAcceleration = currentBlinkScore - previousBlinkScore;
 
-    if (currentBlinkScore > blinkThreshold && blinkAcceleration > blinkAccelerationThreshold && (currentTime - lastActionTime > debouncePeriod)) {
-        triggerBlinkAction();
-        lastActionTime = currentTime; // Reset the timer
+    if (currentBlinkScore > blinkThreshold && !isBlinking) {
+        blinkStart();
+        isBlinking = true;
+    } else if (currentBlinkScore <= blinkThreshold && isBlinking) {
+        blinkStop();
+        isBlinking = false;
     }
-
-    previousBlinkScore = currentBlinkScore;
 }
 
-//dethrone
+function blinkStart() {
+    console.log("blink started at " + new Date().toLocaleString() + " " + new Date().getMilliseconds() + "ms");
+    //controlLED(true);
+    //displayMessage();
+    //sendBlinkState(1);
+    displayImage();
+}
 
-function triggerBlinkAction() {
-    console.log("blinked")
-    controlLED(true);
-    //toggleBackground("black");
-    displayMessage();
-    setTimeout(() => {
-        controlLED(false);
-        //toggleBackground("white");
-        clearMessage();
-    }, 2);
+function blinkStop() {
+    console.log("blink stopped" + new Date().toLocaleString() + " " + new Date().getMilliseconds() + "ms");
+    //controlLED(false);
+    //clearMessage();
+    //sendBlinkState(0);
+    imageElement.style.display = 'none'; // Hide the image
+}
+
+let imageElement = document.getElementById('blink-image');
+
+function displayImage() {
+    let imageUrl = imageDirectory + "canvas_" + String(currentFrame).padStart(5, '0') + ".png";
+    imageElement.src = imageUrl;
+    imageElement.style.display = 'block'; // Show the image
+    currentFrame = (currentFrame % totalFrames) + 1; // Cycle through frames
+    console.log(currentFrame);
+}
+
+async function sendBlinkState(state) {
+    try {
+        const response = await fetch('http://localhost:3000/blink', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ state: state }),
+        });
+        const data = await response.text();
+    } catch (error) {
+        console.error('Error:', error);
+    }
 }
 
 function toggleBackground(color) {
