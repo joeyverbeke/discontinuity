@@ -1,6 +1,3 @@
-//for mirror video
-//transform: scaleX(-1);
-
 import vision from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
 
 const { FaceLandmarker, FilesetResolver } = vision;
@@ -128,8 +125,13 @@ async function predictWebcam() {
         }
     }
     if (results) {
-        detectBlinking(results.faceBlendshapes);
-    }
+        if(results.faceBlendshapes.length > 0){
+            detectBlinking(results.faceBlendshapes);
+        }
+        else{
+            displayImage();
+        }
+    } 
     if (webcamRunning) {
         window.requestAnimationFrame(predictWebcam);
     }
