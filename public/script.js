@@ -11,6 +11,7 @@ let totalFrames = 50; // Total number of frames you have
 let currentFrame = 1; // Start from the first frame
 let imageDirectory = "/images/";
 
+let lastNumFaces = 0;
 
 let phrases = 
 [
@@ -122,15 +123,20 @@ async function predictWebcam() {
             displayCtx.drawImage(blinkImage, 0, 0, displayCanvas.width, displayCanvas.height);
         } else {
             displayCtx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+
         }
     }
     if (results) {
+        /*
         if(results.faceBlendshapes.length > 0){
             detectBlinking(results.faceBlendshapes);
         }
         else{
             displayImage();
         }
+        */
+
+        detectBlinking(results.faceBlendshapes);
     } 
     if (webcamRunning) {
         window.requestAnimationFrame(predictWebcam);
@@ -146,7 +152,16 @@ let isBlinking = false;
 
 function detectBlinking(blendShapes) {
     if (!blendShapes.length) {
+        lastNumFaces = 0;
+        displayImage();
         return;
+    }else{
+        if(lastNumFaces == 0){
+            console.log("hi")
+            blinkImage.style.display = 'none';
+        }
+
+        lastNumFaces = blendShapes.length;
     }
 
     let currentBlinkScore = Math.max(blendShapes[0].categories[9].score, blendShapes[0].categories[10].score);
@@ -157,7 +172,7 @@ function detectBlinking(blendShapes) {
     } else if (currentBlinkScore <= blinkThreshold && isBlinking) {
         blinkStop();
         isBlinking = false;
-    }
+    } 
 }
 
 function blinkStart() {
