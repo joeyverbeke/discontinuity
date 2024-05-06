@@ -60,8 +60,49 @@ const cropCanvas = document.getElementById('cropCanvas');
 const cropCtx = cropCanvas.getContext('2d');
 const blinkImage = document.getElementById('blink-image');
 
+// Function to get all available webcams
+async function getAvailableWebcams() {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+    return videoDevices;
+}
+
+// Function to create a dropdown menu for webcam selection
+function createWebcamDropdown(webcams) {
+    const webcamDropdown = document.createElement('select');
+    webcamDropdown.id = 'webcamDropdown';
+    webcams.forEach((webcam, index) => {
+        const option = document.createElement('option');
+        option.value = webcam.deviceId;
+        option.text = `Webcam ${index + 1}: ${webcam.label}`;
+        webcamDropdown.appendChild(option);
+    });
+    // Append the dropdown to the body and set its position to be on top of everything else
+    document.body.appendChild(webcamDropdown);
+    webcamDropdown.style.position = 'fixed';
+    webcamDropdown.style.zIndex = '9999';
+    webcamDropdown.style.display = 'none'; // Initially hidden
+    webcamDropdown.onchange = function() {
+        enableCam(this.value); // Update the selected camera when the dropdown changes
+    };
+    return webcamDropdown;
+}
+
+// Function to toggle the webcam dropdown
+function toggleWebcamDropdown() {
+    const webcamDropdown = document.getElementById('webcamDropdown');
+    webcamDropdown.style.display = webcamDropdown.style.display === 'none' ? 'block' : 'none';
+}
+
+// Listen for the "C" key to toggle the webcam dropdown
+window.addEventListener('keydown', function(event) {
+    if (event.key === 'c' || event.key === 'C') {
+        toggleWebcamDropdown();
+    }
+});
+
 // Check if webcam access is supported and start webcam.
-function enableCam() {
+async function enableCam(deviceId) {
     if (!faceLandmarker) {
         console.log("Wait! faceLandmarker not loaded yet.");
         return;
@@ -70,6 +111,7 @@ function enableCam() {
     // getUsermedia parameters.
     const constraints = {
         video: {
+            deviceId: deviceId,
             width: { ideal: 1920 },
             height: { ideal: 1080 },
             //frameRate: { ideal: 120 }
@@ -87,6 +129,12 @@ function enableCam() {
         });
     });
 }
+
+// Initialize the webcam dropdown
+getAvailableWebcams().then(webcams => {
+    createWebcamDropdown(webcams);
+    enableCam(webcams[0].deviceId); // Start with the first webcam
+});
 
 let lastVideoTime = -1;
 let results = undefined;
@@ -157,7 +205,6 @@ function detectBlinking(blendShapes) {
         return;
     }else{
         if(lastNumFaces == 0){
-            console.log("hi")
             blinkImage.style.display = 'none';
         }
 
@@ -168,9 +215,11 @@ function detectBlinking(blendShapes) {
 
     if (currentBlinkScore > blinkThreshold && !isBlinking) {
         blinkStart();
+        video.style.display = 'none'; // Hide the video
         isBlinking = true;
     } else if (currentBlinkScore <= blinkThreshold && isBlinking) {
         blinkStop();
+        video.style.display = 'block'; // Show the video
         isBlinking = false;
     } 
 }

@@ -1,6 +1,6 @@
 const express = require('express');
 const { createSerialPort, sendBit } = require('./serialCommunication');
-const osc = require('osc');
+//const osc = require('osc');
 
 const app = express();
 const port = 3000;
@@ -26,6 +26,7 @@ app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}/`);
 });
 
+/*
 // Create a new osc UDP port
 let udpPort = new osc.UDPPort({
   localAddress: "127.0.0.1",
@@ -35,6 +36,7 @@ let udpPort = new osc.UDPPort({
 });
 
 udpPort.open();
+*/
 
 // Add a new endpoint to handle blink events
 app.post('/blink', (req, res) => {
@@ -46,6 +48,7 @@ app.post('/blink', (req, res) => {
   res.send(`Blink state set to ${state}`);
 });
 
+/*
 // Create an OSC server
 let oscServer = new osc.UDPPort({
   localAddress: "127.0.0.1",
@@ -58,3 +61,4 @@ oscServer.open();
 oscServer.on("message", function (oscMsg) {
   console.log("Received OSC message: ", oscMsg);
 });
+*/
