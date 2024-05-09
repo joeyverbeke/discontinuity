@@ -59,6 +59,7 @@ const displayCtx = displayCanvas.getContext('2d');
 const cropCanvas = document.getElementById('cropCanvas');
 const cropCtx = cropCanvas.getContext('2d');
 const blinkImage = document.getElementById('blink-image');
+const blackCanvas = document.getElementById('blackCanvas');
 
 // Function to get all available webcams
 async function getAvailableWebcams() {
@@ -202,10 +203,12 @@ function detectBlinking(blendShapes) {
     if (!blendShapes.length) {
         lastNumFaces = 0;
         displayImage();
+        blackCanvas.style.display = 'block'; // Show the black canvas
         return;
     }else{
         if(lastNumFaces == 0){
             blinkImage.style.display = 'none';
+            blackCanvas.style.display = 'none';
         }
 
         lastNumFaces = blendShapes.length;
@@ -216,10 +219,12 @@ function detectBlinking(blendShapes) {
     if (currentBlinkScore > blinkThreshold && !isBlinking) {
         blinkStart();
         video.style.display = 'none'; // Hide the video
+        blackCanvas.style.display = 'block'; // Show the black canvas
         isBlinking = true;
     } else if (currentBlinkScore <= blinkThreshold && isBlinking) {
         blinkStop();
-        video.style.display = 'block'; // Show the video
+        video.style.display = 'block'; // Show the video    
+        blackCanvas.style.display = 'none'; // Hide the black canvas
         isBlinking = false;
     } 
 }
@@ -229,9 +234,6 @@ function blinkStart() {
     controlLED(true);
     blinking = true;
 
-    //displayMessage();
-    //sendBlinkState(1);
-    //displayImage();
 }
 
 function blinkStop() {
@@ -239,16 +241,29 @@ function blinkStop() {
     controlLED(false);
     blinking = false;
 
-    //clearMessage();
-    //sendBlinkState(0);
     blinkImage.style.display = 'none'; // Hide the image
 }
 
+
+let lastImageUpdateTime = 0;
+const imageUpdateInterval = 30; // Interval in milliseconds
+
 function displayImage() {
+    const currentTime = Date.now();
     let imageUrl = imageDirectory + "canvas_" + String(currentFrame).padStart(5, '0') + ".png";
     blinkImage.src = imageUrl;
     blinkImage.style.display = 'block'; // Show the image
-    currentFrame = (currentFrame % totalFrames) + 1; // Cycle through frames
+
+    if (currentTime - lastImageUpdateTime > imageUpdateInterval) {
+        if (!window.direction || currentFrame === 1) {
+            window.direction = 'up';
+        } else if (currentFrame === totalFrames) {
+            window.direction = 'down';
+        }
+
+        currentFrame += (window.direction === 'up' ? 1 : -1);
+        lastImageUpdateTime = currentTime;
+    }
     //console.log(currentFrame);
 }
 

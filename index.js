@@ -5,7 +5,7 @@ const { createSerialPort, sendBit } = require('./serialCommunication');
 const app = express();
 const port = 3000;
 
-const USE_SERIAL = true;
+const USE_SERIAL = false;
 const serial = USE_SERIAL ? createSerialPort('/dev/tty.usbserial-0286023A') : null;
 
 app.use(express.static(__dirname));
@@ -62,3 +62,10 @@ oscServer.on("message", function (oscMsg) {
   console.log("Received OSC message: ", oscMsg);
 });
 */
+
+//Hyper-realistic photo of an extremely transparent see-through invisible glass snake fetus, hyper detailed, tons of veins, coils, worm, captured on a 100MP medium format camera with a prime lens, emphasizing crisp details and vibrant colors, utilizing HDR technique for enhanced dynamic range, reminiscent of high-resolution National Geographic photography
+//saturation, pink, red, over saturated
+
+
+//photograph with detailed anatomical accuracy,  transparency, translucency, see-through, cybernetic, circuits, wiring, microorganisms, bacteria, pipes, maximalist, transparent, scientific imagery, petri dish, microscope image, microscopic
+
