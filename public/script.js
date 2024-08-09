@@ -68,40 +68,6 @@ async function getAvailableWebcams() {
     return videoDevices;
 }
 
-// Function to create a dropdown menu for webcam selection
-function createWebcamDropdown(webcams) {
-    const webcamDropdown = document.createElement('select');
-    webcamDropdown.id = 'webcamDropdown';
-    webcams.forEach((webcam, index) => {
-        const option = document.createElement('option');
-        option.value = webcam.deviceId;
-        option.text = `Webcam ${index + 1}: ${webcam.label}`;
-        webcamDropdown.appendChild(option);
-    });
-    // Append the dropdown to the body and set its position to be on top of everything else
-    document.body.appendChild(webcamDropdown);
-    webcamDropdown.style.position = 'fixed';
-    webcamDropdown.style.zIndex = '9999';
-    webcamDropdown.style.display = 'none'; // Initially hidden
-    webcamDropdown.onchange = function() {
-        enableCam(this.value); // Update the selected camera when the dropdown changes
-    };
-    return webcamDropdown;
-}
-
-// Function to toggle the webcam dropdown
-function toggleWebcamDropdown() {
-    const webcamDropdown = document.getElementById('webcamDropdown');
-    webcamDropdown.style.display = webcamDropdown.style.display === 'none' ? 'block' : 'none';
-}
-
-// Listen for the "C" key to toggle the webcam dropdown
-window.addEventListener('keydown', function(event) {
-    if (event.key === 'c' || event.key === 'C') {
-        toggleWebcamDropdown();
-    }
-});
-
 // Check if webcam access is supported and start webcam.
 async function enableCam(deviceId) {
     if (!faceLandmarker) {
@@ -112,14 +78,15 @@ async function enableCam(deviceId) {
     // getUsermedia parameters.
     const constraints = {
         video: {
-            deviceId: deviceId,
+            deviceId: deviceId ? { exact: deviceId } : undefined,
             width: { ideal: 1920 },
             height: { ideal: 1080 },
             //frameRate: { ideal: 120 }
         }
     };
     // Activate the webcam stream.
-    navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = stream;
         video.addEventListener("loadeddata", () => {
             const videoTrack = stream.getVideoTracks()[0];
@@ -128,13 +95,29 @@ async function enableCam(deviceId) {
             console.log(`Actual frame rate: ${settings.frameRate}`);
             predictWebcam();
         });
-    });
+    } catch (error) {
+        console.error("Error accessing the webcam: ", error);
+    }
 }
 
-// Initialize the webcam dropdown
-getAvailableWebcams().then(webcams => {
-    createWebcamDropdown(webcams);
-    enableCam(webcams[0].deviceId); // Start with the first webcam
+// Listen for the "C" key to switch between the first and second available webcam
+let currentWebcamIndex = 0;
+window.addEventListener('keydown', async function(event) {
+    if ((event.key === 'c' || event.key === 'C') && webcams && webcams.length > 1) {
+        currentWebcamIndex = (currentWebcamIndex + 1) % 2; // Toggle between 0 and 1
+        enableCam(webcams[currentWebcamIndex].deviceId);
+    }
+});
+
+// Initialize webcams and try to start the second webcam
+let webcams = [];
+getAvailableWebcams().then(availableWebcams => {
+    webcams = availableWebcams;
+    if (webcams.length > 0) {
+        enableCam(webcams[1].deviceId); // Start with the second webcam
+    } else {
+        console.error("No webcams available.");
+    }
 });
 
 let lastVideoTime = -1;
@@ -231,14 +214,14 @@ function detectBlinking(blendShapes) {
 
 function blinkStart() {
     //console.log("blink started at " + new Date().toLocaleString() + " " + new Date().getMilliseconds() + "ms");
-    controlLED(true);
+    //controlLED(true);
     blinking = true;
 
 }
 
 function blinkStop() {
     //console.log("blink stopped" + new Date().toLocaleString() + " " + new Date().getMilliseconds() + "ms");
-    controlLED(false);
+    //controlLED(false);
     blinking = false;
 
     blinkImage.style.display = 'none'; // Hide the image
@@ -246,7 +229,7 @@ function blinkStop() {
 
 
 let lastImageUpdateTime = 0;
-const imageUpdateInterval = 30; // Interval in milliseconds
+const imageUpdateInterval = 50; // Interval in milliseconds
 
 function displayImage() {
     const currentTime = Date.now();
@@ -320,6 +303,7 @@ function clearMessage() {
     }
 }
 
+/*
 async function controlLED(turnOn) {
     try {
         const response = await fetch('http://localhost:3000/control-led', {
@@ -335,3 +319,4 @@ async function controlLED(turnOn) {
         console.error('Error:', error);
     }
 }
+*/
