@@ -1,4 +1,4 @@
-import vision from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
+import vision from './tasks-vision/vision_bundle.mjs';
 
 const { FaceLandmarker, FilesetResolver } = vision;
 let faceLandmarker;
@@ -38,11 +38,11 @@ let phrases =
 ];
 
 async function createFaceLandmarker() {
-    const filesetResolver = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
+    const filesetResolver = await FilesetResolver.forVisionTasks( './tasks-vision/wasm');
     faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
         baseOptions: {
-            modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
-            delegate: "GPU"
+            modelAssetPath:  './assets/face_landmarker.task',
+            delegate: "CPU"
         },
         outputFaceBlendshapes: true,
         runningMode,
@@ -114,7 +114,7 @@ let webcams = [];
 getAvailableWebcams().then(availableWebcams => {
     webcams = availableWebcams;
     if (webcams.length > 0) {
-        enableCam(webcams[1].deviceId); // Start with the second webcam
+        enableCam(webcams[0].deviceId); // Start with the second webcam
     } else {
         console.error("No webcams available.");
     }

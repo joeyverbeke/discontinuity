@@ -1,24 +1,30 @@
-const express = require('express');
-const { createSerialPort, sendBit } = require('./serialCommunication');
+import express from 'express';
+// import { createSerialPort, sendBit } from './serialCommunication.js';
 //const osc = require('osc');
+
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const port = 3001;
 
-const USE_SERIAL = false;
-const serial = USE_SERIAL ? createSerialPort('/dev/tty.usbserial-0286023A') : null;
+// const USE_SERIAL = false;
+// const serial = USE_SERIAL ? createSerialPort('/dev/tty.usbserial-0286023A') : null;
 
-app.use(express.static(__dirname));
+app.use(express.static(`${__dirname}/public`));
 app.use(express.json());
 
 // Endpoint to control the LED
-app.post('/control-led', (req, res) => {
-  const { state } = req.body; // 1/0
-  if(USE_SERIAL){
-    sendBit(serial, state); 
-  }
-  res.send(`LED state set to ${state}`);
-});
+// app.post('/control-led', (req, res) => {
+//   const { state } = req.body; // 1/0
+//   if(USE_SERIAL){
+//     sendBit(serial, state); 
+//   }
+//   res.send(`LED state set to ${state}`);
+// });
 
 app.use(express.static('public'));
 
